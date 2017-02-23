@@ -1,0 +1,62 @@
+#!/bin/bash
+warn=200
+crit=200
+sar=
+user=
+nice=
+system=
+iowait=
+steal=
+us=
+exitc=0
+msg=
+
+while getopts ":h:c:w:" OPTION
+do
+        case $OPTION in
+        h)
+        host=$OPTARG
+        ;;
+        w)
+        warn=$OPTARG
+        ;;
+        c)
+        crit=$OPTARG
+        ;;
+        esac
+done
+
+#first check if we can get the data, otherwise give unknown status
+if [ $(sudo ssh -q $host exit; echo $?) == 255 ]; then {
+echo "SSH is not working towards $host!"
+exit 3;
+}
+fi
+
+#check once, analyse hexa.
+
+sar="$(sudo ssh $host sar 1 5 | grep -i "average")"
+
+user="$(echo $sar |awk '{print $3}')"
+nice="$(echo $sar |awk '{print $4}')"
+system="$(echo $sar |awk '{print $5}')"
+iowait="$(echo $sar |awk '{print $6}')"
+steal="$(echo $sar |awk '{print $7}')"
+
+us="$(echo $user + $nice + $system + $iowait + $steal | bc)"
+
+if [ $(printf "%.0f\n" $us) -ge $warn ]; then
+	exitc=1
+	msg="CPU WARNING: CPU usage is $us% | usage=$us;;;;"
+fi
+if [ $(printf "%.0f\n" $us) -ge $crit ]; then
+	exitc=2
+	msg="CPU CRITICAL: CPU usage is $us% | usage=$us;;;;"
+fi
+
+if [ -z "$msg" ]; then {
+msg="CPU OK: Usage: $us% Details: user is $user%, nice is $nice%, system is $system%, iowait is $iowait%, steal is $steal% | user=$user;;;; nice=$nice;;;; system=$system;;;; iowait=$iowait;;;; steal=$steal;;;;"
+}
+fi
+echo $msg
+exit $exitc

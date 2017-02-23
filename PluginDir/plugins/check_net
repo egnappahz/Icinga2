@@ -1,0 +1,68 @@
+#!/bin/bash
+message=""
+messageh=""
+names=
+rec=
+tra=
+host=
+warn=9999999999
+crit=9999999999
+exitc=0
+data=
+
+while getopts ":h:c:w:" OPTION
+do
+        case $OPTION in
+        h)
+        host=$OPTARG
+        ;;
+        w)
+        warn=$OPTARG
+        ;;
+        c)
+        crit=$OPTARG
+        ;;
+        esac
+done
+
+#first check if we can get the data, otherwise give unknown status
+if [ $(sudo ssh -q $host exit; echo $?) == 255 ]; then {
+echo "SSH is not working towards $host!"
+exit 3;
+}
+fi
+
+#fetch once so we dont bother the server
+data="$(sudo ssh $host sar -n DEV 1 5 | grep -i eth | grep -i average)"
+
+bondcount=$(echo $data | wc -l)
+#echo $bondcount
+for ((i=1; i<=$bondcount; i++ ))
+do
+	#echo $i
+	names[$i]=$(echo $data | awk 'FNR =='$i' {print $2;}')
+	rec[$i]=$(echo $data | awk 'FNR =='$i' {print $5;}')
+	tra[$i]=$(echo $data | awk 'FNR =='$i' {print $6;}')
+done
+
+for ((i=1; i<=$bondcount; i++ ))
+do
+	message="$message${names[$i]}_rec=${rec[$i]};;;; ${names[$i]}_tra=${tra[$i]};;;; "
+	messageh="$messageh${names[$i]}_receive: ${rec[$i]} kB/s, ${names[$i]}_transmit: ${tra[$i]} kB/s \n"
+
+	#printf "%.0f\n" ${rec[$i]}
+
+	if [ $(printf "%.0f\n" ${tra[$i]}) -gt $warn ] || [ $(printf "%.0f\n" ${rec[$i]}) -gt $warn ]; then
+		if [ $exitc == 0 ]; then
+			exitc=1
+		fi
+	fi
+	if [ $(printf "%.0f\n" ${tra[$i]}) -gt $crit ] || [ $(printf "%.0f\n" ${rec[$i]}) -gt $crit ]; then
+		if [ $exitc == 1 ]; then
+			exitc=2
+		fi
+	fi
+done
+
+echo "$messageh | $message"
+exit $exitc

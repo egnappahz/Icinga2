@@ -1,0 +1,34 @@
+#!/bin/bash
+
+host= #parameter "h"
+warn=-1 #parameter "w"
+crit=-1 #parameter "c"
+
+while getopts ":h:c:w:" OPTION
+do
+        case $OPTION in
+        h)
+        host=$OPTARG
+        ;;
+        w)
+        warn=$OPTARG
+        ;;
+        c)
+        crit=$OPTARG
+        ;;
+        esac
+done
+
+vms=$(sudo ssh $host pidof qemu-kvm | wc -w)
+
+if [ $crit -ge $vms ]; then
+	echo "VMs CRITICAL: There are $vms VMs running on this host | VMs=$vms;;;;"
+	$(exit 2)
+elif [ $warn -ge $vms ]; then
+	echo "VMs WARNING: There are $vms VMs running on this host | VMs=$vms;;;;"
+	$(exit 1)
+else
+	echo "VMs OK: There are $vms VMs running on this host | VMs=$vms;;;;"
+	$(exit 0)
+fi
+

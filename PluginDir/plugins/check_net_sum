@@ -1,0 +1,42 @@
+#!/bin/bash
+warn=9999999999
+crit=9999999999
+rec=
+tra=
+type=
+exitc=0
+
+while getopts ":h:c:w:a:" OPTION
+do
+        case $OPTION in
+        h)
+        host=$OPTARG
+        ;;
+        w)
+        warn=$OPTARG
+        ;;
+        c)
+        crit=$OPTARG
+        ;;
+	a)
+        type=$OPTARG
+        ;;
+        esac
+done
+
+if [ $(sudo ssh -q $host exit; echo $?) == 255 ]; then {
+echo "SSH is not working towards $host!"
+exit 3;
+}
+fi
+if [ "$type" == "vm" ]; then
+	rec="$(sudo ssh $host ifconfig eth0 | awk 'FNR == 4 {print $5}')"
+	tra="$(sudo ssh $host ifconfig eth0 | awk 'FNR == 6 {print $5}')"
+else
+	rec="$(sudo ssh $host ifconfig bond0 | awk 'FNR == 3 {print $5}')"
+	tra="$(sudo ssh $host ifconfig bond0 | awk 'FNR == 5 {print $5}')"
+
+fi
+
+echo "$rec bytes received and $tra bytes transmitted in total. | rec=$rec;;;; tra=$tra;;;;"
+exit $exitc

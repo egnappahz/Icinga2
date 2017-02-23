@@ -1,0 +1,50 @@
+#!/bin/bash
+
+perc=
+avail=2
+used=1
+total=
+warn=80
+crit=90
+declare -a args
+declare -a res
+pythonscript="/usr/lib64/nagios/plugins/rhv/get_storageds"
+
+while getopts ":h:c:w:s:" OPTION
+do
+        case $OPTION in
+        h)
+        engine=$OPTARG
+        ;;
+        w)
+        warn=$OPTARG
+        ;;
+        c)
+        crit=$OPTARG
+        ;;
+        s)
+        sdname=$OPTARG
+        ;;
+        esac
+done
+
+arg=("-H $engine" "-sd $sdname")
+
+res=($($pythonscript ${arg[@]}))
+used=${res[0]}
+avail=${res[1]}
+total=$(($used + $avail))
+usedGB=$(($used / 1024 / 1024 / 1024))
+availGB=$(($avail / 1024 / 1024 / 1024))
+totalGB=$(($total / 1024 / 1024 /1024))
+perc=$(echo "scale=2; ($usedGB / $totalGB) * 100" | bc)
+
+echo "used: $usedGB GB available: $availGB (GB total: $totalGB GB) percentage: $perc | used=$used;;;; avail=$avail;;;; total=$total;;;; perc=$perc;;;;"
+
+if [ $(printf "%.0f\n" $perc) -gt $crit ]; then
+	exit 2
+fi
+
+if [ $(printf "%.0f\n" $perc) -gt $warn ]; then
+	exit 1
+fi

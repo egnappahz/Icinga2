@@ -1,0 +1,57 @@
+#!/usr/bin/python
+import csv
+import time
+import argparse
+import sys
+
+from ovirtsdk.api import API
+from ovirtsdk.xml import params
+from ConfigParser import SafeConfigParser
+
+api = ""
+debug = ""
+
+""" Connect it
+"""
+
+parser = argparse.ArgumentParser(description="RHV Info Collection")
+parser.add_argument('-H', help='RHV Host')
+parser.add_argument('-d', help='debug')
+parser.add_argument('-sd', help='Storage Domain')
+args = parser.parse_args()
+
+if(args.d) : debug = 1
+config = SafeConfigParser()
+config.filename="/usr/lib64/nagios/plugins/rhv/rhv.ini"
+config.read(config.filename)
+
+""" General function to retrive the info from the RHEV system
+"""
+try:
+    if debug: print "Getting information from %s with url %s" % (args.H, config.get(args.H,'url'))
+    # Initialize api_instance sith login creadentials
+    api = API( url=config.get(args.H,'url'),
+        username=config.get(args.H,'username'),
+        password=config.get(args.H,'password'),
+        ca_file=config.get(args.H,'ca_file') )
+    if debug: print "-Connected successfully-"
+except Exception as ex:
+    print "WARNING - %s in config file" % str(ex)
+    sys.exit(1)
+
+#Well if you really want a list...
+#sds = api.storagedomains.list()
+#for sd in sds:
+#    print sd.get_name() + ": " + str(sd.get_description()) + ", Used: " + str(sd.used) + ", Available: " + str(sd.available)
+
+#get the specified storagedomain
+try:
+    vms = api.vms.list()
+    for vm in vms:
+	#print "OLA: " + vm.get_host()
+	if str(vm.get_host()) != "None": hostid=str(vm.get_host().get_id())
+	if str(vm.get_host()) != "None": hostname=api.hosts.get(id=hostid)
+        print str(vm.get_name()) + "| Memory:" + str(vm.get_memory()) + ", hostname: " + str(hostname.get_name())
+except Exception as ex:
+    print "WARNING - %s " % str(ex)
+    sys.exit(1)

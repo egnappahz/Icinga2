@@ -1,0 +1,40 @@
+##ovirt engine template
+  vars.os = "Linux"
+  vars.sla = "24x7"
+  vars.sshcheck = "1"
+  vars.engine = "1"
+
+  ##performance checks
+  #check memory
+  vars.checkmem.crit = "90"
+  vars.checkmem.warn = "70"
+  #check procs
+  vars.checkprocs.crit = "350"
+  vars.checkprocs.warn = "260"
+  #check users
+  vars.checkusers.crit = "2"
+  vars.checkusers.warn = "0"
+  #check load
+  vars.checkload.crit = "2,2,2" #load1, load5, load15
+  vars.checkload.warn = "1,1,1"
+  #check net
+  vars.checknet.crit = "10240" #so this is actually a gigabyte per sec
+  vars.checknet.warn = "1024" #this is in kB/sec, if ANY of the interfaced superseed it: transmit and receive are seperate!!
+  #check cpu
+  vars.checkcpu.crit = "90"
+  vars.checkcpu.warn = "75"
+
+  ##disk/volume/partition checks
+  #check volume var
+  vars.checkdiskvar.crit = "90"
+  vars.checkdiskvar.warn = "80"
+  #check volume tmp
+  vars.checkdisktmp.crit = "90"
+  vars.checkdisktmp.warn = "80"
+  #check disk root
+  vars.checkdiskroot.crit = "90"
+  vars.checkdiskroot.warn = "80"
+
+  vars.notification["mail"] = {
+  groups = ["icingaadmins"]
+  }

@@ -1,0 +1,10 @@
+object Host "$host" {
+        address = "$ip"
+        import "generic-host"
+        vars.os = "Linux"
+        vars.sla = "24x7"
+        vars.sshcheck = "1"
+        vars.hyp = "1"
+	vars.group = "$group"
+        include "../templates/args_hyp.tmpl"
+}

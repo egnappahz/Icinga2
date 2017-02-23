@@ -1,0 +1,46 @@
+#!/bin/bash
+warn=200
+crit=200
+us=
+exitc=0
+msg=
+
+while getopts ":h:c:w:" OPTION
+do
+        case $OPTION in
+        h)
+        host=$OPTARG
+        ;;
+        w)
+        warn=$OPTARG
+        ;;
+        c)
+        crit=$OPTARG
+        ;;
+        esac
+done
+
+#first check if we can get the data, otherwise give unknown status
+if [ $(sudo ssh -q $host exit; echo $?) == 255 ]; then {
+echo "SSH is not working towards $host!"
+exit 3;
+}
+fi
+
+us="$(sudo ssh $host top -bn1 | grep -i "cpu(s)" | awk '{print $2}')"
+
+if [ $(printf "%.0f\n" $us) -ge $warn ]; then
+	exitc=1
+	msg="CPU WARNING: CPU usage is $us% | usage=$us;;;;"
+fi
+if [ $(printf "%.0f\n" $us) -ge $crit ]; then
+	exitc=2
+	msg="CPU CRITICAL: CPU usage is $us% | usage=$us;;;;"
+fi
+
+if [ -z "$msg" ]; then {
+msg="CPU OK: CPU usage is $us% | usage=$us;;;;"
+}
+fi
+echo $msg
+exit $exitc

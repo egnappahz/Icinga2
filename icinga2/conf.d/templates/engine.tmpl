@@ -1,0 +1,6 @@
+object Host "$host" {
+  import "generic-host"
+  address = "$ip"
+
+  include "templates/args_engine.tmpl"
+}

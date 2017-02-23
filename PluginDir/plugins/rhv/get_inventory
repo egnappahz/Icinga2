@@ -1,0 +1,72 @@
+#!/usr/bin/python
+import csv
+import time
+import argparse
+import sys
+from rhv4 import rhv4
+from ConfigParser import SafeConfigParser
+
+
+
+# Set debut Paramater
+debug=0
+
+# Start Main Loop here
+try:
+        parser = argparse.ArgumentParser(description="RHV Info Collection")
+        parser.add_argument('-H', help='RHV host')
+        parser.add_argument('-d', help='debug')
+        args = parser.parse_args()
+
+        if(args.d) : debug = 1
+
+        config = SafeConfigParser()
+        config.filename="/usr/lib64/nagios/plugins/rhv/rhv.ini"
+        config.read(config.filename)
+        rhvm_instance = rhv4(config,debug)
+	dataArr = rhvm_instance.getInventory(args.H)
+	filename = "/var/www/html/data/data/%s.csv" %args.H
+	try: 
+		writefile=open(filename,'w')
+		csvout = csv.writer(writefile, delimiter=';')
+		csvout.writerow(	["name",
+					"description",
+					"state",
+                                        "cores",
+                                        "sockets",
+                                        "memory",
+                                        "memory_policy",
+                                        "high_availability",
+                                        "os_version",
+                                        "cluster",
+					"running_on",
+					"started_on",
+                                        "vda_size",
+                                        "vdb_size"])
+
+		for data in dataArr:
+			csvout.writerow([
+					data["name"],
+					data["description"],
+					data["state"],
+					data["cores"],
+					data["sockets"],
+					data["memory"],
+					data["memory_policy"],
+					data["high_availability"],
+					data["full_version"],
+					data["cluster"],
+					data["running_on"],
+                                        data["started_on"],
+					data["vda_size"],
+					data["vdb_size"]])
+		print "OK - Inventory ready on <a href='/data/index'>portal</a>"
+	except Exception as ex:
+		print "WARNING - can not write to %  - General Exception : %s " % (filename,str(ex))
+		sys.exit(1)
+
+
+except Exception as ex:
+        print "WARNING - issue %s " % str(ex)
+        sys.exit(1)
+

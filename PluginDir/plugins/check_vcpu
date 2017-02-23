@@ -1,0 +1,28 @@
+#!/bin/bash
+host=
+exitc=0
+count=
+
+while getopts ":h:c:w:" OPTION
+do
+        case $OPTION in
+        h)
+        host=$OPTARG
+        ;;
+        esac
+done
+
+#first check if we can get the data, otherwise give unknown status
+if [ $(sudo ssh -q $host exit; echo $?) == 255 ]; then {
+echo "SSH is not working towards $host!"
+exit 3;
+}
+fi
+
+#fetch once so we dont bother the server
+count="$(sudo ssh $host nproc --all)"
+
+bondcount=$(echo $data | wc -l)
+
+echo "$count Treads available. | vcpus=$count"
+exit $exitc

@@ -1,0 +1,50 @@
+#!/bin/bash
+message=""
+names=
+rec=
+tra=
+host=
+
+while getopts ":h:c:w:" OPTION
+do
+        case $OPTION in
+        h)
+        host=$OPTARG
+        ;;
+        w)
+        warn=$OPTARG
+        ;;
+        c)
+        crit=$OPTARG
+        ;;
+        esac
+done
+
+
+
+#fetch once so we dont bother the server
+sudo ssh $host sar -n DEV 0 | grep -i bond > /tmp/bondcache_$host
+
+bondcount=$(cat /tmp/bondcache | wc -l)
+#echo $bondcount
+for ((i=1; i<=$bondcount; i++ ))
+do
+	#echo $i
+	names[$i]=$(cat /tmp/bondcache | awk 'FNR =='$i' {print $3;}')
+	rec[$i]=$(cat /tmp/bondcache | awk 'FNR =='$i' {print $6;}')
+	tra[$i]=$(cat /tmp/bondcache | awk 'FNR =='$i' {print $7;}')
+done
+
+for ((i=1; i<=$bondcount; i++ ))
+do
+	message="$message${names[$i]}_rec=${rec[$i]};;;; ${names[$i]}_tra = ${tra[$i]};;;;"
+done
+
+echo "OK:We have values | $message"
+
+#for item in ${names[*]}
+#do
+#	printf "%s\n" $item
+#done
+
+#rm -f /tmp/bondcache_$host
